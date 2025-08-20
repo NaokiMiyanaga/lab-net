@@ -1,17 +1,14 @@
-#!/bin/bash
-FRR_MODULE_DIR=/usr/lib/aarch64-linux-gnu/frr/modules
+\
+  #!/usr/bin/env bash
+  set -euo pipefail
+  source /init/_common.sh
 
-mkdir -p /var/agentx /var/run/agentx
-ln -sfn /var/agentx /var/run/agentx
-chown -R Debian-snmp:Debian-snmp /var/agentx
-chmod 0777 /var/agentx
+  start_snmpd
+  start_frr_daemons
+  wait_for_vty
 
-cp /init/common-snmpd.conf /etc/snmp/snmpd.conf
-pkill -x snmpd || true
-sleep 1
-snmpd -C -c /etc/snmp/snmpd.conf -f -Lo &
+  # Discover r1's container IP via DNS in the default compose network
+  PEER_IP="$(getent hosts r1 | awk '{print $1}')"
+  configure_min_policy "${PEER_IP}" "65002"
 
-/usr/lib/frr/zebra --moduledir $FRR_MODULE_DIR -d -A 127.0.0.1 -M zebra_snmp
-/usr/lib/frr/bgpd  --moduledir $FRR_MODULE_DIR -d -A 127.0.0.1 -M bgpd_snmp
-
-tail -f /dev/null
+  tail -f /init/start.log

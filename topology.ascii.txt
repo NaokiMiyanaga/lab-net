@@ -1,0 +1,12 @@
+\
+  +----------------------+        docker bridge (subnet varies per run)        +----------------------+
+  |        R1            |<------------------- 172.19.0.0/16 ----------------->|         R2           |
+  |  hostname: r1        |                                                     |   hostname: r2       |
+  |  AS: 65001           |  eth0: 172.19.0.3/16  ——  peer ——  eth0: 172.19.0.2/16  |   AS: 65002        |
+  |  SNMP: UDP 10161<-161|                                                     |  SNMP: UDP 20161<-161|
+  |  bgpd + zebra + SNMP |                                                     |  bgpd + zebra + SNMP |
+  +----------------------+                                                     +----------------------+
+
+  Notes
+  - Host maps UDP 10161 -> r1:161, UDP 20161 -> r2:161
+  - Actual bridge subnet may change; check with `docker inspect` or `docker exec r1 ip -br a`

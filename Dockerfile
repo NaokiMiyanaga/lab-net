@@ -1,10 +1,9 @@
-FROM debian:11
+FROM debian:bookworm
 
-RUN apt-get update && \
-    apt-get install -y frr snmpd snmp libsnmp-dev iproute2 iputils-ping && \
-    rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
 
-COPY init /init
-WORKDIR /init
+RUN apt-get update &&       apt-get install -y         frr frr-snmp snmp snmpd iproute2 iputils-ping procps net-tools &&       rm -rf /var/lib/apt/lists/*
 
-CMD ["bash", "/init/r1-init.sh"]
+# Copy init scripts and shared config
+COPY init/ /init/
+RUN chmod +x /init/*.sh

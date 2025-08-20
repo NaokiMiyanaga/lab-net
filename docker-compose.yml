@@ -1,24 +1,25 @@
-version: "3.9"
 services:
   r1:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: r1
+    hostname: r1
+    init: true
+    cap_add: [ "NET_ADMIN", "NET_RAW", "SYS_ADMIN" ]
+    security_opt: [ "no-new-privileges:false" ]
     ports:
-      - "10161:161/udp"
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-      - SYS_ADMIN
-    security_opt:
-      - no-new-privileges:false
+      - "10161:161/udp"   # SNMP/UDP -> r1
+    command: ["/init/r1-init.sh"]
   r2:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: r2
+    hostname: r2
+    init: true
+    cap_add: [ "NET_ADMIN", "NET_RAW", "SYS_ADMIN" ]
+    security_opt: [ "no-new-privileges:false" ]
     ports:
-      - "20161:161/udp"
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-      - SYS_ADMIN
-    security_opt:
-      - no-new-privileges:false
+      - "20161:161/udp"   # SNMP/UDP -> r2
+    command: ["/init/r2-init.sh"]
