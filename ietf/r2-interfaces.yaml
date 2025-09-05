@@ -1,0 +1,21 @@
+# Device-level config intent (YANG-JSON mapping in YAML)
+# Modules: ietf-interfaces, iana-if-type, ietf-ip
+
+ietf-interfaces:interfaces:
+  interface:
+    - name: svc0
+      type: iana-if-type:ethernetCsmacd
+      enabled: true
+      ietf-ip:ipv4:
+        address:
+          - ip: 198.51.100.2
+            prefix-length: 24
+    - name: mgmt0
+      type: iana-if-type:ethernetCsmacd
+      enabled: true
+      ietf-ip:ipv4:
+        address:
+          - ip: 203.0.113.2
+            prefix-length: 24
+
+# Note: Interface names here are logical (svc0/mgmt0). Map them to container IFs as needed.

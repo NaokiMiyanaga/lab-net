@@ -1,0 +1,97 @@
+services:
+  # L3 Routers (FRR)
+  r1:
+    networks:
+      labnet:
+        ipv4_address: 10.0.0.1   # service-plane (BGP peering)
+      mgmtnet:
+        ipv4_address: 192.168.0.1   # management-plane
+      vlan10:
+        ipv4_address: 10.0.10.1   # SVI for VLAN10
+    environment:
+      - ADVERTISE_PREFIXES=10.0.10.0/24
+      - PEER_IP=10.0.0.2
+
+  r2:
+    networks:
+      labnet:
+        ipv4_address: 10.0.0.2   # service-plane (BGP peering)
+      mgmtnet:
+        ipv4_address: 192.168.0.2   # management-plane
+      vlan20:
+        ipv4_address: 10.0.20.1   # SVI for VLAN20
+    environment:
+      - ADVERTISE_PREFIXES=10.0.20.0/24
+      - PEER_IP=10.0.0.1
+
+  # L2 switches (access only; no trunk between l2a and l2b)
+  l2a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: l2a
+    hostname: l2a
+    command: ["/init/l2-init.sh"]
+    networks:
+      mgmtnet:
+        ipv4_address: 192.168.0.11
+      vlan10:
+        ipv4_address: 10.0.10.2
+
+  l2b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: l2b
+    hostname: l2b
+    command: ["/init/l2-init.sh"]
+    networks:
+      mgmtnet:
+        ipv4_address: 192.168.0.12
+      vlan20:
+        ipv4_address: 10.0.20.2
+
+  # Endpoint hosts on access ports (single VLAN)
+  h10:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: h10
+    hostname: h10
+    command: ["bash", "-lc", "ip addr add 10.0.10.100/24 dev eth0 && ip route del default || true; ip route add default via 10.0.10.1 dev eth0 || true; sleep infinity"]
+    networks:
+      vlan10:
+        ipv4_address: 10.0.10.100
+
+  h20:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: h20
+    hostname: h20
+    command: ["bash", "-lc", "ip addr add 10.0.20.100/24 dev eth0 && ip route del default || true; ip route add default via 10.0.20.1 dev eth0 || true; sleep infinity"]
+    networks:
+      vlan20:
+        ipv4_address: 10.0.20.100
+
+networks:
+  # mgmtnet/labnet are defined in docker-compose.dual-plane.yml
+  vlan10:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.10.0/24
+          gateway: 10.0.10.254
+  vlan20:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.20.0/24
+          gateway: 10.0.20.254
+
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dual-plane.yml -f docker-compose.l2-access.yml up -d --build
+# Notes:
+# - Data plane: R1 -> L2A -> h10 on vlan10, and R2 -> L2B -> h20 on vlan20. No trunk between l2a and l2b.
+# - R1 and R2 are directly connected over `labnet` (10.0.0.0/24) for eBGP peering (from docker-compose.dual-plane.yml).
+# - Gateways are reserved at .254 to keep .1 for SVIs on R1/R2.

@@ -2,7 +2,8 @@
   #!/usr/bin/env bash
   set -euo pipefail
 
-  NODES=(r1 r2)
+NODES=(r1 r2)
+COMMUNITY="${SNMP_ROCOMMUNITY:-public}"
 
   hr(){ printf '\n%s\n' "============================================================"; }
   shorth(){ printf '\n--- %s ---\n' "$*"; }
@@ -32,8 +33,8 @@
     HOSTPORT="$(docker port "$C" 161/udp 2>/dev/null | sed -E 's/.*:([0-9]+)/\1/;q' || true)"
     if [[ -n "${HOSTPORT}" ]]; then
       shorth "SNMP(BGP4-MIB): via 127.0.0.1:${HOSTPORT}"
-      snmpwalk -v2c -c public "127.0.0.1:${HOSTPORT}" 1.3.6.1.2.1.15.1.0 || true
-      snmpwalk -v2c -c public "127.0.0.1:${HOSTPORT}" 1.3.6.1.2.1.15.3.1 | head -n 40 || true
+      snmpwalk -v2c -c "${COMMUNITY}" "127.0.0.1:${HOSTPORT}" 1.3.6.1.2.1.15.1.0 || true
+      snmpwalk -v2c -c "${COMMUNITY}" "127.0.0.1:${HOSTPORT}" 1.3.6.1.2.1.15.3.1 | head -n 40 || true
     else
       echo "(SNMP: 161/udp not published for ${C})"
     fi

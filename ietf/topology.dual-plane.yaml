@@ -1,0 +1,30 @@
+# RFC 8345-like topology (minimal fields, schema-compliant for validator)
+ietf-network:networks:
+  network:
+    - network-id: service-plane
+      node:
+        - node-id: r1
+          ietf-network-topology:termination-point:
+            - tp-id: r1-svc
+        - node-id: r2
+          ietf-network-topology:termination-point:
+            - tp-id: r2-svc
+      ietf-network-topology:link:
+        - link-id: svc-r1-r2
+          ietf-network-topology:source: { source-node: r1, source-tp: r1-svc }
+          ietf-network-topology:destination: { dest-node: r2, dest-tp: r2-svc }
+
+    - network-id: management-plane
+      node:
+        - node-id: r1
+          ietf-network-topology:termination-point:
+            - tp-id: r1-mgmt
+        - node-id: r2
+          ietf-network-topology:termination-point:
+            - tp-id: r2-mgmt
+      ietf-network-topology:link:
+        - link-id: mgmt-r1-r2
+          ietf-network-topology:source: { source-node: r1, source-tp: r1-mgmt }
+          ietf-network-topology:destination: { dest-node: r2, dest-tp: r2-mgmt }
+
+# Note: IP addressing and attributes are omitted here to satisfy the strict schema.

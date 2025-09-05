@@ -18,12 +18,13 @@
 
   > IP addresses above reflect a typical run (compose default network in our tests).
   > If your bridge range differs, check with `docker exec r1 ip -br a`.
+  
 
   ## What’s inside
 
   - `docker-compose.yml` — spins up **r1** and **r2** (Debian bookworm), exposes SNMP/UDP on host
   - `Dockerfile` — installs `frr`, `frr-snmp`, `snmpd` and basic utils
-  - `init/common-snmpd.conf` — Net-SNMP master AgentX config
+  
   - `init/_common.sh` — shared helpers
   - `init/r1-init.sh`, `init/r2-init.sh` — start SNMPD, start `zebra/bgpd` with SNMP modules, pre-wire permissive route-maps (no networks advertised by default)
   - `scripts/show_frr_status.sh` — one-shot status (BGP + BGP4-MIB via SNMP)

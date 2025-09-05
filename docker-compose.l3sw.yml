@@ -1,0 +1,49 @@
+services:
+  r1:
+    networks:
+      lan10:
+        ipv4_address: 10.0.10.1   # SVI for VLAN10 equivalent
+      transit:
+        ipv4_address: 198.51.100.1  # Inter-switch routing/BGP peering
+    environment:
+      - MY_ASN=64512
+      - PEER_ASN=64513
+      - PEER_IP=198.51.100.2
+      - ADVERTISE_PREFIXES=10.0.10.0/24
+      # Optional:
+      # - BGP_ROUTER_ID=198.51.100.1
+  r2:
+    networks:
+      lan20:
+        ipv4_address: 10.0.20.1   # SVI for VLAN20 equivalent
+      transit:
+        ipv4_address: 198.51.100.2
+    environment:
+      - MY_ASN=64513
+      - PEER_ASN=64512
+      - PEER_IP=198.51.100.1
+      - ADVERTISE_PREFIXES=10.0.20.0/24
+      # - BGP_ROUTER_ID=198.51.100.2
+
+networks:
+  lan10:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.10.0/24
+  lan20:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.20.0/24
+  transit:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 198.51.100.0/24
+
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.l3sw.yml up -d --build
+# Notes:
+# - Each Docker network is a Linux bridge (untagged segment). This models VLANs at L3 via SVIs.
+# - Add host containers to `lan10`/`lan20` to emulate endpoints in each L2 domain.

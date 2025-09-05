@@ -10,6 +10,13 @@ services:
     security_opt: [ "no-new-privileges:false" ]
     ports:
       - "10161:161/udp"   # SNMP/UDP -> r1
+    environment:
+      - MY_ASN=65001
+      - PEER_ASN=65002
+      - SNMP_ROCOMMUNITY=public
+      # Optional overrides:
+      # - PEER_IP=172.19.0.2
+      # - ADVERTISE_PREFIXES=10.0.1.0/24,10.0.3.0/24
     command: ["/init/r1-init.sh"]
   r2:
     build:
@@ -22,4 +29,11 @@ services:
     security_opt: [ "no-new-privileges:false" ]
     ports:
       - "20161:161/udp"   # SNMP/UDP -> r2
+    environment:
+      - MY_ASN=65002
+      - PEER_ASN=65001
+      - SNMP_ROCOMMUNITY=public
+      # Optional overrides:
+      # - PEER_IP=172.19.0.3
+      # - ADVERTISE_PREFIXES=10.0.2.0/24
     command: ["/init/r2-init.sh"]

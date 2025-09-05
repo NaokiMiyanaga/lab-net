@@ -1,0 +1,106 @@
+## Master Network Design Policy (dual-plane)
+#
+# Addressing (do not change without updating all overlays):
+# - Management plane (mgmtnet): 192.168.0.0/24
+#   - r1=192.168.0.1, r2=192.168.0.2, L2SW l2a=192.168.0.11, l2b=192.168.0.12
+#   - Reserve .100+ for test hosts/tools; avoid .254 unless explicitly used as GW by an overlay
+# - Service plane (labnet): 10.0.0.0/24
+#   - r1=10.0.0.1, r2=10.0.0.2; used for BGP peering only (no hosts attach here)
+#
+# AS Numbering:
+# - r1: MY_ASN=65001, r2: MY_ASN=65002 (eBGP across labnet)
+# - Router-ID=management IP; BGP peering uses labnet IP; update-source optional
+#
+# VLAN Policy (data-plane modeled in overlays; not defined here):
+# - VLAN 10 => subnet 10.0.10.0/24 (access hosts attach here; r1 SVI=10.0.10.1)
+# - VLAN 20 => subnet 10.0.20.0/24 (access hosts attach here; r2 SVI=10.0.20.1)
+# - Trunk between L2 switches l2a <-> l2b; access ports per VLAN
+# - See docker-compose.l2-access.yml for the access-only L2 wiring (no trunk).
+#
+# SNMP/Management:
+# - SNMP is restricted to mgmtnet; no host port publishing in this file.
+# - Use a tools container connected to mgmtnet to query SNMP if needed.
+
+services:
+  # Addressing policy (master design):
+  # - Management plane (mgmtnet): use 192.168.0.0/24, low host IDs (.1, .2, .11, .12)
+  # - Service plane (labnet): use 10.0.0.0/24, low host IDs (.1, .2)
+  #   These replace previous placeholder ranges (198.51.100.0/24, 203.0.113.0/24).
+
+  r1:
+    networks:
+      labnet:
+        ipv4_address: 10.0.0.1        # service-plane (BGP peering)
+      mgmtnet:
+        ipv4_address: 192.168.0.1     # management-plane (mgmt)
+    environment:
+      - MY_ASN=65001                  # see policy/master.ietf.yaml operational.bgp.asn.r1
+      - PEER_ASN=65002                # see policy/master.ietf.yaml operational.bgp.asn.r2
+      - SNMP_ROCOMMUNITY=public       # see policy/master.ietf.yaml operational.snmp.rocommunity
+      - PEER_IP=10.0.0.2              # peer over service-plane (policy.planes.service.bgp_peering.r2_ip)
+      - BGP_ROUTER_ID=192.168.0.1     # stable control-plane RID (policy.planes.management.router_ids.r1)
+      # - BGP_UPDATE_SOURCE=eth0      # or an IP/ifname if using loopback
+    # Strict mgmt-plane isolation (override base SNMP port publishing)
+    ports: []
+
+  r2:
+    networks:
+      labnet:
+        ipv4_address: 10.0.0.2
+      mgmtnet:
+        ipv4_address: 192.168.0.2
+    environment:
+      - MY_ASN=65002                  # see policy/master.ietf.yaml operational.bgp.asn.r2
+      - PEER_ASN=65001                # see policy/master.ietf.yaml operational.bgp.asn.r1
+      - SNMP_ROCOMMUNITY=public       # see policy/master.ietf.yaml operational.snmp.rocommunity
+      - PEER_IP=10.0.0.1              # peer over service-plane (policy.planes.service.bgp_peering.r1_ip)
+      - BGP_ROUTER_ID=192.168.0.2     # stable control-plane RID (policy.planes.management.router_ids.r2)
+      # - BGP_UPDATE_SOURCE=eth0
+    ports: []
+
+  # L2 switches (placeholders for mgmt visibility; data-plane VLAN/trunking is in other overlays)
+  l2a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: l2a
+    hostname: l2a
+    command: ["/init/l2-init.sh"]
+    networks:
+      mgmtnet:
+        ipv4_address: 192.168.0.11    # mgmt IP (L2SW management; data-plane VLANs in overlay)
+
+  l2b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: l2b
+    hostname: l2b
+    command: ["/init/l2-init.sh"]
+    networks:
+      mgmtnet:
+        ipv4_address: 192.168.0.12    # mgmt IP (L2SW management; data-plane VLANs in overlay)
+
+networks:
+  labnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24  # service-plane
+          gateway: 10.0.0.254  # reserve .1 for R1, .2 for R2
+  mgmtnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.0.0/24  # management-plane
+          gateway: 192.168.0.254  # reserve .1/.2 for routers, .11/.12 for L2SW
+
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dual-plane.yml up -d --build
+# Notes:
+# - This file is the master network design (dual-plane). It defines mgmt/service planes
+#   and includes L2 switches l2a/l2b for management visibility.
+# - SNMP is not host-published here (ports: []); query via mgmtnet (e.g., from a tools container).
+# - L2SW VLAN segmentation is modeled in a dedicated overlay (docker-compose.l2-access.yml, no trunk),
+#   while mgmt IPs for L2SW stay in 192.168.0.0/24 here.
+# - Gateways are pinned to .254 to avoid conflicting with R1/R2 addresses on .1/.2.

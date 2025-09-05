@@ -1,0 +1,56 @@
+{
+  "ietf-network:networks": {
+    "network": [
+      {
+        "network-id": "service-plane",
+        "network-types": { "ietf-network-topology:network": {} },
+        "node": [
+          {
+            "node-id": "r1",
+            "ietf-network-topology:termination-point": [
+              { "tp-id": "r1-svc" }
+            ]
+          },
+          {
+            "node-id": "r2",
+            "ietf-network-topology:termination-point": [
+              { "tp-id": "r2-svc" }
+            ]
+          }
+        ],
+        "ietf-network-topology:link": [
+          {
+            "link-id": "svc-r1-r2",
+            "source": { "source-node": "r1", "source-tp": "r1-svc" },
+            "destination": { "destination-node": "r2", "destination-tp": "r2-svc" }
+          }
+        ]
+      },
+      {
+        "network-id": "management-plane",
+        "network-types": { "ietf-network-topology:network": {} },
+        "node": [
+          {
+            "node-id": "r1",
+            "ietf-network-topology:termination-point": [
+              { "tp-id": "r1-mgmt" }
+            ]
+          },
+          {
+            "node-id": "r2",
+            "ietf-network-topology:termination-point": [
+              { "tp-id": "r2-mgmt" }
+            ]
+          }
+        ],
+        "ietf-network-topology:link": [
+          {
+            "link-id": "mgmt-r1-r2",
+            "source": { "source-node": "r1", "source-tp": "r1-mgmt" },
+            "destination": { "destination-node": "r2", "destination-tp": "r2-mgmt" }
+          }
+        ]
+      }
+    ]
+  }
+}

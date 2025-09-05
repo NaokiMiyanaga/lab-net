@@ -1,12 +1,43 @@
-\
-  +----------------------+        docker bridge (subnet varies per run)        +----------------------+
-  |        R1            |<------------------- 172.19.0.0/16 ----------------->|         R2           |
-  |  hostname: r1        |                                                     |   hostname: r2       |
-  |  AS: 65001           |  eth0: 172.19.0.3/16  ——  peer ——  eth0: 172.19.0.2/16  |   AS: 65002        |
-  |  SNMP: UDP 10161<-161|                                                     |  SNMP: UDP 20161<-161|
-  |  bgpd + zebra + SNMP |                                                     |  bgpd + zebra + SNMP |
-  +----------------------+                                                     +----------------------+
+  FRR + SNMP (AgentX) lab — Dual-plane + L2SW (docker-bridge backend)
+
+  Management plane (mgmtnet: 192.168.0.0/24)
+
+      192.168.0.1             192.168.0.2           192.168.0.11         192.168.0.12
+    +------------+           +------------+         +------------+       +------------+
+    |    R1      |           |     R2     |         |    L2A     |       |    L2B     |
+    | SNMP Agent |           | SNMP Agent |         |  snmpd     |       |  snmpd     |
+    +------------+-----------+------------+---------+------------+-------+------------+
+                 (mgmtnet: management-only reachability; SNMP via mgmt)
+
+  Service plane (labnet: 10.0.0.0/24) — eBGP peering path
+
+         10.0.0.1                                  10.0.0.2
+    +----------------+   BGP (eBGP 65001-65002)   +----------------+
+    |      R1        |<-------------------------->|       R2       |
+    | bgpd + zebra   |                            | bgpd + zebra   |
+    +----------------+                            +----------------+
+
+  Data plane (VLANs as separate Docker bridges; no L2 trunk)
+
+  vlan10 (10.0.10.0/24)                           vlan20 (10.0.20.0/24)
+  GW .254 reserved; SVI on R1 .1                  GW .254 reserved; SVI on R2 .1
+
+   +------+      access      +------+      access      +--------------------+
+   | h10  |----------------->| L2A  |---------------->| R1 (SVI 10.0.10.1) |
+   |10.0.10.100/24           +------+                 +--------------------+
+   |GW→10.0.10.1                                                        
+   +------+                                                               
+
+   +------+      access      +------+      access      +--------------------+
+   | h20  |----------------->| L2B  |---------------->| R2 (SVI 10.0.20.1) |
+   |10.0.20.100/24           +------+                 +--------------------+
+   |GW→10.0.20.1                                                      
+
+  (No direct L2 link between L2A and L2B; each VLAN is an independent segment)
 
   Notes
-  - Host maps UDP 10161 -> r1:161, UDP 20161 -> r2:161
-  - Actual bridge subnet may change; check with `docker inspect` or `docker exec r1 ip -br a`
+  - mgmt-plane (mgmtnet) carries Router-ID and SNMP; SNMP ports are not host-published in dual-plane overlay.
+  - service-plane (labnet) is used for BGP peering: R1 10.0.0.1 <-> R2 10.0.0.2.
+  - VLANs are modeled as separate Docker networks `vlan10` / `vlan20`. No L2 link between L2A and L2B.
+  - SVIs: R1 on vlan10 (10.0.10.1/24), R2 on vlan20 (10.0.20.1/24). Endpoints h10/h20 attach as access ports.
+  - Authoritative SoT: `policy/master.ietf.yaml`. Compose overlays are derived to match addressing and roles.
