@@ -1,6 +1,8 @@
 \
   # FRR + SNMP (AgentX) Mini Lab
 
+  [日本語 README](README.ja.md)
+
   A minimal two-router lab running FRRouting (zebra/bgpd) with the SNMP modules,
   fronted by Net-SNMP as an AgentX master. Verified on macOS with OrbStack (Docker Desktop should also work).
 
@@ -16,18 +18,19 @@
   +----------------------+                                                     +----------------------+
   ```
 
-  > IP addresses above reflect a typical run (compose default network in our tests).
-  > If your bridge range differs, check with `docker exec r1 ip -br a`.
-  
+  See `topology.ascii.txt` for the dual-plane + L2 access model used in this repo
+  (mgmtnet=192.168.0.0/24, labnet=10.0.0.0/24, vlan10/20 segments; no L2 trunk).
+
 
   ## What’s inside
 
-  - `docker-compose.yml` — spins up **r1** and **r2** (Debian bookworm), exposes SNMP/UDP on host
-  - `Dockerfile` — installs `frr`, `frr-snmp`, `snmpd` and basic utils
-  
-  - `init/_common.sh` — shared helpers
-  - `init/r1-init.sh`, `init/r2-init.sh` — start SNMPD, start `zebra/bgpd` with SNMP modules, pre-wire permissive route-maps (no networks advertised by default)
-  - `scripts/show_frr_status.sh` — one-shot status (BGP + BGP4-MIB via SNMP)
+  - `docker-compose.yml` — base services for r1/r2
+  - `docker-compose.dual-plane.yml` — separates service-plane(labnet) and mgmt-plane(mgmtnet)
+  - `docker-compose.l2-access.yml` — L2 access segments (vlan10/20), hosts h10/h20
+  - `Dockerfile` — installs `frr`, `frr-snmp`, `snmpd` and utilities
+  - `init/_common.sh`, `init/r1-init.sh`, `init/r2-init.sh`, `init/l2-init.sh`
+  - `scripts/lab.sh` — one-liner wrapper (up/down/smoke/diag)
+  - `scripts/show_frr_status.sh`, `scripts/smoke_test.sh`, `scripts/diag_net_conflicts.sh`
 
   ## Requirements
 
@@ -42,32 +45,41 @@
   ## Quick start
 
   ```bash
-  docker compose up -d --build
-  # Check
-  bash scripts/show_frr_status.sh
+  # Recommended profile: dual-plane + L2 access
+  bash scripts/lab.sh up
+  bash scripts/lab.sh smoke   # interfaces, BGP, dataplane, SNMP
   ```
 
-  At this point sessions are up but **no prefixes** are advertised yet (empty RIB).  
-  The init scripts created both **RM-OUT** and **RM-IN** route-maps and attached them, so you can start advertising safely.
+  Addresses (defaults):
+  - mgmtnet 192.168.0.0/24 — r1=192.168.0.1, r2=192.168.0.2, l2a=.11, l2b=.12
+  - labnet  10.0.0.0/24 — r1=10.0.0.1, r2=10.0.0.2 (eBGP)
+  - vlan10  10.0.10.0/24 — r1 SVI=10.0.10.1, h10=10.0.10.100 (l2a has 10.0.10.2)
+  - vlan20  10.0.20.0/24 — r2 SVI=10.0.20.1, h20=10.0.20.100 (l2b has 10.0.20.2)
 
-  ### Advertise one prefix on each router
+  ### Other overlays (profiles)
 
-  ```bash
-  # R1: advertise 10.0.1.0/24
-  docker exec -it r1 vtysh -c 'conf t' \
-    -c 'router bgp 65001' \
-    -c 'network 10.0.1.0/24' \
-    -c 'end'
+  - L3 switch style (SVIs on separate L2 segments)
+    - Overlay: `docker-compose.l3sw.yml`
+    - Segments: `lan10`=10.0.10.0/24, `lan20`=10.0.20.0/24, transit=198.51.100.0/24
+    - Usage: `docker compose -f docker-compose.yml -f docker-compose.l3sw.yml up -d --build`
 
-  # R2: advertise 10.0.2.0/24
-  docker exec -it r2 vtysh -c 'conf t' \
-    -c 'router bgp 65002' \
-    -c 'network 10.0.2.0/24' \
-    -c 'end'
-  ```
+  - Common 4-node profile (L3×2 + L2×2)
+    - Overlay: `docker-compose.common-4node.yml`
+    - Mgmt: 192.168.0.0/24 (r1=192.168.0.1, r2=192.168.0.2)
+    - Transit eBGP: 10.0.0.0/30 (r1 .2, r2 .3)
+    - Service L2: `lan10`=10.0.10.0/24 (r1 SVI .1), `lan20`=10.0.20.0/24 (r2 SVI .1)
+    - Usage: `docker compose -f docker-compose.yml -f docker-compose.common-4node.yml up -d --build`
 
-  > If you want to ensure reachability in the local RIB, you can also add a blackhole route inside each container:
-  > `ip route add 10.0.1.0/24 dev lo` on r1 and `ip route add 10.0.2.0/24 dev lo` on r2.
+  ### BGP (auto-config)
+
+  The combined overlays auto-configure eBGP neighbors and permissive route-maps:
+  - r1 (AS 65001): neighbor 10.0.0.2 (AS 65002), advertises 10.0.10.0/24
+  - r2 (AS 65002): neighbor 10.0.0.1 (AS 65001), advertises 10.0.20.0/24
+
+  Notes for L2 access model
+  - Docker bridge does not carry 802.1Q tags. VLANs are modeled as separate bridges (`vlan10`, `vlan20`).
+  - There is no L2 link between L2A and L2B; each VLAN is independent.
+  - Gateways are set to `.254` so `.1` can be used by SVIs.
 
   ### Verify BGP
 
@@ -94,6 +106,27 @@
   ```bash
   docker exec -it r1 snmpwalk -v2c -c public 127.0.0.1:161 1.3.6.1.2.1.15.3.1 | head
   ```
+
+  ## Policy (single source of truth)
+
+  - `policy/master.ietf.yaml` holds the network design in RFC8345-like form with `operational:*` extensions for Compose/BGP/VLAN/SNMP.
+  - Compose overlays and diagrams are kept in sync with this file.
+
+  ## IETF-style YAML (validation)
+
+  - Topology (dual-plane): `ietf/topology.dual-plane.yaml`
+  - Device interfaces (examples): `ietf/r1-interfaces.yaml`, `ietf/r2-interfaces.yaml`
+  - JSON versions are included for strict tooling: `ietf/topology.dual-plane.json`, `ietf/r1-interfaces.json`, `ietf/r2-interfaces.json`
+  - Validation/ETL (with an external repo providing the schema):
+    ```bash
+    # example layout
+    #   ../ietf-network-schema/    (schema + tools)
+    #   ./                        (this repo)
+    SCHEMA_REPO=../ietf-network-schema
+    python3 "$SCHEMA_REPO/scripts/validate.py" \
+      --schema "$SCHEMA_REPO/schema/schema.json" \
+      --data ietf/topology.dual-plane.yaml
+    ```
 
   ## Maintenance / Troubleshooting
 
