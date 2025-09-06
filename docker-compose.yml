@@ -1,3 +1,4 @@
+name: lab-net
 services:
   r1:
     build:

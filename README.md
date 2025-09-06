@@ -6,21 +6,6 @@
   A minimal two-router lab running FRRouting (zebra/bgpd) with the SNMP modules,
   fronted by Net-SNMP as an AgentX master. Verified on macOS with OrbStack (Docker Desktop should also work).
 
-  ## Topology (ASCII)
-
-  ```text
-  +----------------------+        docker bridge (subnet varies per run)        +----------------------+
-  |        R1            |<------------------- 172.19.0.0/16 ----------------->|         R2           |
-  |  hostname: r1        |                                                     |   hostname: r2       |
-  |  AS: 65001           |  eth0: 172.19.0.3/16  ——  peer ——  eth0: 172.19.0.2/16  |   AS: 65002        |
-  |  SNMP: UDP 10161<-161|                                                     |  SNMP: UDP 20161<-161|
-  |  bgpd + zebra + SNMP |                                                     |  bgpd + zebra + SNMP |
-  +----------------------+                                                     +----------------------+
-  ```
-
-  See `topology.ascii.txt` for the dual-plane + L2 access model used in this repo
-  (mgmtnet=192.168.0.0/24, labnet=10.0.0.0/24, vlan10/20 segments; no L2 trunk).
-
 
   ## What’s inside
 
@@ -48,6 +33,8 @@
   # Recommended profile: dual-plane + L2 access
   bash scripts/lab.sh up
   bash scripts/lab.sh smoke   # interfaces, BGP, dataplane, SNMP
+  bash scripts/lab.sh diag    # diagnose host-side network conflicts
+  bash scripts/lab.sh down    # tear down
   ```
 
   Addresses (defaults):
@@ -80,6 +67,7 @@
   - Docker bridge does not carry 802.1Q tags. VLANs are modeled as separate bridges (`vlan10`, `vlan20`).
   - There is no L2 link between L2A and L2B; each VLAN is independent.
   - Gateways are set to `.254` so `.1` can be used by SVIs.
+  - In dual-plane, SNMP exposure to host is disabled (`ports: []`). Use a management-net container to query.
 
   ### Verify BGP
 
@@ -140,6 +128,21 @@
   |---:|:---:|:---|
   | 10161 | r1:161/udp | SNMP to r1 |
   | 20161 | r2:161/udp | SNMP to r2 |
+
+  ## Topology (ASCII)
+
+  ```text
+  +----------------------+        docker bridge (subnet varies per run)        +----------------------+
+  |        R1            |<------------------- 172.19.0.0/16 ----------------->|         R2           |
+  |  hostname: r1        |                                                     |   hostname: r2       |
+  |  AS: 65001           |  eth0: 172.19.0.3/16  ——  peer ——  eth0: 172.19.0.2/16  |   AS: 65002        |
+  |  SNMP: UDP 10161<-161|                                                     |  SNMP: UDP 20161<-161|
+  |  bgpd + zebra + SNMP |                                                     |  bgpd + zebra + SNMP |
+  +----------------------+                                                     +----------------------+
+  ```
+
+  See `topology.ascii.txt` for the dual-plane + L2 access model used in this repo
+  (mgmtnet=192.168.0.0/24, labnet=10.0.0.0/24, vlan10/20 segments; no L2 trunk).
 
   ## License
 

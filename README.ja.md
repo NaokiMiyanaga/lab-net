@@ -4,22 +4,6 @@
   FRRouting（zebra/bgpd）を Net-SNMP（AgentX マスター）でフロントし、BGP4-MIB を引ける最小構成の 2 ルータ環境です。
   macOS（OrbStack で検証）/ Docker で動作します。
 
-  ## トポロジ（ASCII）
-
-  ```text
-  +----------------------+        docker bridge（実行ごとに変動あり）         +----------------------+
-  |        R1            |<------------------ 172.19.0.0/16 ------------------>|         R2           |
-  |  hostname: r1        |                                                      |   hostname: r2       |
-  |  AS: 65001           |  eth0: 172.19.0.3/16  ——  peer ——  eth0: 172.19.0.2/16  |   AS: 65002        |
-  |  SNMP: UDP 10161<-161|                                                      |  SNMP: UDP 20161<-161|
-  |  bgpd + zebra + SNMP |                                                      |  bgpd + zebra + SNMP |
-  +----------------------+                                                      +----------------------+
-  ```
-
-  詳細な dual-plane + L2SW 構成の図は `topology.ascii.txt:1` を参照してください。
-
-  > 上記 IP は一例です。実際のサブネットは `docker exec r1 ip -br a` などで確認してください。
-
   ## 構成物
 
   - `docker-compose.yml` — **r1 / r2** を起動。ホストの UDP 10161/20161 を公開
@@ -41,14 +25,30 @@
 
   ## 使い方（Quick start）
 
+  推奨は dual-plane + L2 access のプロファイルです（ワンコマンド）。
+
   ```bash
-  # デフォルト最小構成（単一ネット）
+  bash scripts/lab.sh up       # 起動（dual-plane + L2 access）
+  bash scripts/lab.sh smoke    # IF/BGP/データプレーン/SNMP 確認
+  bash scripts/lab.sh diag     # 競合診断
+  bash scripts/lab.sh down     # 停止
+  ```
+
+  初期状態で eBGP ピアリングと最小広告が自動設定されます（下記「BGP（自動設定）」参照）。
+
+  補足: dual-plane 構成ではホスト公開ポートは無効化されています（`ports: []`）。管理面 `mgmtnet` 側から SNMP を実行してください。
+
+  ---
+
+  参考（最小・単一ネット構成の例）:
+
+  ```bash
   docker compose up -d --build
   bash scripts/show_frr_status.sh   # 起動確認（SNMP/BGP）
   ```
 
-  初期状態では BGP セッションは Up ですが、**経路広告はありません**。  
-  既に `RM-OUT` / `RM-IN` は適用済みなので、ネットワークを追加すれば広告できます。
+  初期状態では BGP セッションは Up ですが、経路広告はありません。`RM-OUT` / `RM-IN` は適用済みなので、
+  ルータにネットワークを追加すると広告されます。
 
   ### それぞれ 1 プレフィックスを広告
 
@@ -280,6 +280,21 @@
   |---:|:---:|:---|
   | 10161 | r1:161/udp | r1 へ SNMP |
   | 20161 | r2:161/udp | r2 へ SNMP |
+
+  ## トポロジ（ASCII）
+
+  ```text
+  +----------------------+        docker bridge（実行ごとに変動あり）         +----------------------+
+  |        R1            |<------------------ 172.19.0.0/16 ------------------>|         R2           |
+  |  hostname: r1        |                                                      |   hostname: r2       |
+  |  AS: 65001           |  eth0: 172.19.0.3/16  ——  peer ——  eth0: 172.19.0.2/16  |   AS: 65002        |
+  |  SNMP: UDP 10161<-161|                                                      |  SNMP: UDP 20161<-161|
+  |  bgpd + zebra + SNMP |                                                      |  bgpd + zebra + SNMP |
+  +----------------------+                                                      +----------------------+
+  ```
+
+  詳細な dual-plane + L2SW 構成の図は `topology.ascii.txt:1` を参照してください。
+  > 上記 IP は一例です。実際のサブネットは `docker exec r1 ip -br a` などで確認してください。
 
   ## ライセンス
 
