@@ -1,10 +1,13 @@
-\
-  # FRR + SNMP (AgentX) Mini Lab
+# FRR + SNMP (AgentX) Mini Lab
 
-  [日本語 README](README.ja.md)
+[日本語 README](README.ja.md)
 
-  A minimal two-router lab running FRRouting (zebra/bgpd) with the SNMP modules,
-  fronted by Net-SNMP as an AgentX master. Verified on macOS with OrbStack (Docker Desktop should also work).
+A reproducible validation network on Docker Compose featuring two FRRouting routers
+and two L2 access switches, separated into management, service, and data planes.
+FRR is fronted by Net-SNMP (AgentX) so you can query BGP4-MIB while exercising
+eBGP peering, SVIs, and VLAN-like L2 segments. The single source of truth lives in
+`policy/master.ietf.yaml`, and the Compose overlays stay consistent with it.
+Verified on macOS with OrbStack (Docker Desktop also works).
 
 
   ## What’s inside
@@ -36,6 +39,10 @@
   bash scripts/lab.sh diag    # diagnose host-side network conflicts
   bash scripts/lab.sh down    # tear down
   ```
+
+  For detailed usage and profiles:
+  - English: docs/USAGE.md
+  - 日本語: docs/USAGE.ja.md
 
   Addresses (defaults):
   - mgmtnet 192.168.0.0/24 — r1=192.168.0.1, r2=192.168.0.2, l2a=.11, l2b=.12
@@ -129,21 +136,42 @@
   | 10161 | r1:161/udp | SNMP to r1 |
   | 20161 | r2:161/udp | SNMP to r2 |
 
+  
+ 
   ## Topology (ASCII)
-
+ 
   ```text
-  +----------------------+        docker bridge (subnet varies per run)        +----------------------+
-  |        R1            |<------------------- 172.19.0.0/16 ----------------->|         R2           |
-  |  hostname: r1        |                                                     |   hostname: r2       |
-  |  AS: 65001           |  eth0: 172.19.0.3/16  ——  peer ——  eth0: 172.19.0.2/16  |   AS: 65002        |
-  |  SNMP: UDP 10161<-161|                                                     |  SNMP: UDP 20161<-161|
-  |  bgpd + zebra + SNMP |                                                     |  bgpd + zebra + SNMP |
-  +----------------------+                                                     +----------------------+
+  Management plane (mgmtnet: 192.168.0.0/24)
+ 
+      192.168.0.1             192.168.0.2           192.168.0.11         192.168.0.12
+    +------------+           +------------+         +------------+       +------------+
+    |    R1      |           |     R2     |         |    L2A     |       |    L2B     |
+    | SNMP Agent |           | SNMP Agent |         |  snmpd     |       |  snmpd     |
+    +------------+-----------+------------+---------+------------+-------+------------+
+                 (mgmtnet: management-only reachability; SNMP via mgmt)
+ 
+  Service plane (labnet: 10.0.0.0/24) — eBGP peering path
+ 
+         10.0.0.1                                  10.0.0.2
+    +----------------+   BGP (eBGP 65001-65002)   +----------------+
+    |      R1        |<-------------------------->|       R2       |
+    | bgpd + zebra   |                            | bgpd + zebra   |
+    +----------------+                            +----------------+
+ 
+  Data plane (VLANs as separate Docker bridges; no L2 trunk)
+ 
+  vlan10 (10.0.10.0/24)                           vlan20 (10.0.20.0/24)
+  GW .254 reserved; SVI on R1 .1                  GW .254 reserved; SVI on R2 .1
+ 
+   +------+      access      +------+      access      +--------------------+
+   | h10  |----------------->| L2A  |---------------->| R1 (SVI 10.0.10.1) |
+   |10.0.10.100/24           +------+                 +--------------------+
+   |GW->10.0.10.1                                                       
+   +------+                                                              
   ```
-
-  See `topology.ascii.txt` for the dual-plane + L2 access model used in this repo
-  (mgmtnet=192.168.0.0/24, labnet=10.0.0.0/24, vlan10/20 segments; no L2 trunk).
-
+ 
+  See `topology.ascii.txt` for the full dual-plane + L2 access model used in this repo.
+ 
   ## License
 
   MIT
