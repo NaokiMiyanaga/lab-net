@@ -33,12 +33,12 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 10.10.10.0/24
-          gateway: 10.10.10.254
+        - subnet: 10.0.10.0/24
+          gateway: 10.0.10.254
   vlan20:
     name: vlan20
     driver: bridge
     ipam:
       config:
-        - subnet: 10.20.20.0/24
-          gateway: 10.20.20.254
+        - subnet: 10.0.20.0/24
+          gateway: 10.0.20.254

@@ -14,7 +14,14 @@ macOS（OrbStack で検証）/ Docker で動作します。
   - メモ: OrbStack は Docker+Linux VM を提供。アンインストールでスタックごと削除／Desktopへの切替も可
   - 主な構成物: `docker-compose.yml`（基本）, `docker-compose.dual-plane.yml` / `docker-compose.l2-access.yml`（推奨の組合せ）, `Dockerfile`
 
-  ## 初期セットアップ・テスト
+  
+## 注意事項
+- 主要サービスは `logging: none` を利用しており、ディスク肥大を防止しています。
+  そのため `logs` コマンドはデバッグ用途として残していますが、空出力になる場合があります。
+- SNMP の利用は管理プレーン (`mgmtnet`) を経由してください。
+- BGP セッションや経路は `smoke` / `frr` コマンドで確認可能です。
+
+## 初期セットアップ・テスト
 
   推奨は dual-plane + L2 access のプロファイル（ワンコマンド）。
 
@@ -28,7 +35,7 @@ macOS（OrbStack で検証）/ Docker で動作します。
 
   補足: dual-plane 構成ではホストへの SNMP 公開は無効（`ports: []`）。管理面 `mgmtnet` 側から SNMP を実行してください。
 
-## ネットワーク構成（USAGE）
+## 利用ガイド（USAGE）
 
   詳細な手順・プロファイル例・環境変数の一覧は、以下の利用ガイドに集約しました。
   - 日本語: docs/USAGE.ja.md

@@ -13,7 +13,9 @@ services:
       - PEER_IP=10.0.0.2
       - BGP_ROUTER_ID=192.168.0.1
       - ADVERTISE_PREFIXES=10.0.10.0/24
-
+    logging:
+      driver: "none"   # ← ログを一切残さない
+      
   r2:
     networks:
       mgmtnet:
@@ -28,6 +30,8 @@ services:
       - PEER_IP=10.0.0.2
       - BGP_ROUTER_ID=192.168.0.2
       - ADVERTISE_PREFIXES=10.0.20.0/24
+    logging:
+      driver: "none"   # ← ログを一切残さない
 
 networks:
   mgmtnet:

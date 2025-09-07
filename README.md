@@ -30,7 +30,14 @@ Verified on macOS with OrbStack (Docker Desktop also works).
   - Installing OrbStack gives you Docker + Linux VM. Removing OrbStack removes that Docker stack.
   - If you uninstall OrbStack and install Docker Desktop instead, this lab should still work unchanged.
 
-  ## Quick start
+  
+## Notes
+- Core services use `logging: none` to avoid disk bloat.
+  The `logs` command is left for debugging, but often shows no output.
+- Use the management plane (`mgmtnet`) for SNMP.
+- Validate BGP sessions and routes with `smoke` and `frr`.
+
+## Quick start
 
   ```bash
   # Recommended profile: dual-plane + L2 access
@@ -40,7 +47,9 @@ Verified on macOS with OrbStack (Docker Desktop also works).
   bash scripts/lab.sh down    # tear down
   ```
 
-  For detailed usage and profiles:
+  ## Usage guide (USAGE)
+Detailed steps, profile examples, and environment variable list are aggregated in the following usage guide.
+
   - English: docs/USAGE.md
   - 日本語: docs/USAGE.ja.md
 

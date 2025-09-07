@@ -12,6 +12,9 @@ services:
       - ADVERTISE_PREFIXES=10.0.10.0/24
       # Optional:
       # - BGP_ROUTER_ID=198.51.100.1
+    logging:
+      driver: "none"   # ← ログを一切残さない
+      
   r2:
     networks:
       lan20:
@@ -24,7 +27,9 @@ services:
       - PEER_IP=198.51.100.1
       - ADVERTISE_PREFIXES=10.0.20.0/24
       # - BGP_ROUTER_ID=198.51.100.2
-
+    logging:
+      driver: "none"   # ← ログを一切残さない
+      
 networks:
   lan10:
     driver: bridge

@@ -1,4 +1,5 @@
 name: lab-net
+
 services:
   r1:
     build:
@@ -7,18 +8,21 @@ services:
     container_name: r1
     hostname: r1
     init: true
-    cap_add: [ "NET_ADMIN", "NET_RAW", "SYS_ADMIN" ]
-    security_opt: [ "no-new-privileges:false" ]
+    cap_add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
+    security_opt: ["no-new-privileges:false"]
     ports:
-      - "10161:161/udp"   # SNMP/UDP -> r1
+      - "10161:161/udp"   # SNMP → r1
     environment:
       - MY_ASN=65001
       - PEER_ASN=65002
       - SNMP_ROCOMMUNITY=public
-      # Optional overrides:
       # - PEER_IP=172.19.0.2
       # - ADVERTISE_PREFIXES=10.0.1.0/24,10.0.3.0/24
     command: ["/init/r1-init.sh"]
+    logging:
+      driver: "none"   # ログ抑止（ラボ運用向け）   [oai_citation:2‡docker-compose.yml](file-service://file-LhJP1qFkqF4M67gcGiCrfe)
+    networks: [mgmtnet]
+
   r2:
     build:
       context: .
@@ -26,15 +30,83 @@ services:
     container_name: r2
     hostname: r2
     init: true
-    cap_add: [ "NET_ADMIN", "NET_RAW", "SYS_ADMIN" ]
-    security_opt: [ "no-new-privileges:false" ]
+    cap_add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
+    security_opt: ["no-new-privileges:false"]
     ports:
-      - "20161:161/udp"   # SNMP/UDP -> r2
+      - "20161:161/udp"   # SNMP → r2
     environment:
       - MY_ASN=65002
       - PEER_ASN=65001
       - SNMP_ROCOMMUNITY=public
-      # Optional overrides:
       # - PEER_IP=172.19.0.3
       # - ADVERTISE_PREFIXES=10.0.2.0/24
     command: ["/init/r2-init.sh"]
+    logging:
+      driver: "none"   # ログ抑止   [oai_citation:3‡docker-compose.yml](file-service://file-LhJP1qFkqF4M67gcGiCrfe)
+    networks: [mgmtnet]
+
+  l2a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: l2a
+    cap_add: ["NET_ADMIN"]
+    command: ["bash","-lc","/init/l2-init.sh || true; sleep infinity"]
+    restart: unless-stopped
+    logging:
+      driver: "none"   # ログ抑止（巨大化防止）
+    networks: [mgmtnet, vlan10, vlan20]
+
+  l2b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: l2b
+    cap_add: ["NET_ADMIN"]
+    command: ["bash","-lc","/init/l2-init.sh || true; sleep infinity"]
+    restart: unless-stopped
+    logging:
+      driver: "none"
+    networks: [mgmtnet, vlan10, vlan20]
+
+  h10:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: h10
+    command: ["bash","-lc","/init/h10-init.sh || true; sleep infinity"]
+    restart: unless-stopped
+    logging:
+      driver: "none"
+    networks: [vlan10]
+
+  h20:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: h20
+    command: ["bash","-lc","/init/h20-init.sh || true; sleep infinity"]
+    restart: unless-stopped
+    logging:
+      driver: "none"
+    networks: [vlan20]
+
+networks:
+  mgmtnet:
+    name: mgmtnet
+  labnet:
+    name: labnet
+  vlan10:
+    name: vlan10
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.10.0/24
+          gateway: 10.0.10.254
+  vlan20:
+    name: vlan20
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.20.0/24
+          gateway: 10.0.20.254
