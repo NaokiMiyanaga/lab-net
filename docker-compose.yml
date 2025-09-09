@@ -134,6 +134,7 @@ services:
 networks:
   mgmtnet:
     name: mgmtnet
+    external: true
   labnet:
     name: labnet
   vlan10:
