@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="${1:-lab-net}"
-OLD_NET="172.30.0.0/24"
+OLD_NET="192.168.0.0/24"
 NEW_NET="${NEW_NET:-172.30.0.0/24}"
 # host mapping: keep last octet, only swap first 3 octets
 OLD_BASE="${OLD_BASE:-192.168.0}"

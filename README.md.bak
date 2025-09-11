@@ -54,7 +54,7 @@ Detailed steps, profile examples, and environment variable list are aggregated i
   - 日本語: docs/USAGE.ja.md
 
   Addresses (defaults):
-  - mgmtnet 172.30.0.0/24 — r1=172.30.0.1, r2=172.30.0.2, l2a=.11, l2b=.12
+  - mgmtnet 192.168.0.0/24 — r1=192.168.0.1, r2=192.168.0.2, l2a=.11, l2b=.12
   - labnet  10.0.0.0/24 — r1=10.0.0.1, r2=10.0.0.2 (eBGP)
   - vlan10  10.0.10.0/24 — r1 SVI=10.0.10.1, h10=10.0.10.100 (l2a has 10.0.10.2)
   - vlan20  10.0.20.0/24 — r2 SVI=10.0.20.1, h20=10.0.20.100 (l2b has 10.0.20.2)
@@ -68,7 +68,7 @@ Detailed steps, profile examples, and environment variable list are aggregated i
 
   - Common 4-node profile (L3×2 + L2×2)
     - Overlay: `docker-compose.common-4node.yml`
-    - Mgmt: 172.30.0.0/24 (r1=172.30.0.1, r2=172.30.0.2)
+    - Mgmt: 192.168.0.0/24 (r1=192.168.0.1, r2=192.168.0.2)
     - Transit eBGP: 10.0.0.0/30 (r1 .2, r2 .3)
     - Service L2: `lan10`=10.0.10.0/24 (r1 SVI .1), `lan20`=10.0.20.0/24 (r2 SVI .1)
     - Usage: `docker compose -f docker-compose.yml -f docker-compose.common-4node.yml up -d --build`
@@ -150,9 +150,9 @@ Detailed steps, profile examples, and environment variable list are aggregated i
   ## Topology (ASCII)
  
   ```text
-  Management plane (mgmtnet: 172.30.0.0/24)
+  Management plane (mgmtnet: 192.168.0.0/24)
  
-      172.30.0.1             172.30.0.2           172.30.0.11         172.30.0.12
+      192.168.0.1             192.168.0.2           192.168.0.11         192.168.0.12
     +------------+           +------------+         +------------+       +------------+
     |    R1      |           |     R2     |         |    L2A     |       |    L2B     |
     | SNMP Agent |           | SNMP Agent |         |  snmpd     |       |  snmpd     |

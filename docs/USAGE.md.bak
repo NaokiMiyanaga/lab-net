@@ -4,7 +4,7 @@ Detailed usage for the FRR + Linux Bridge + SNMP/AgentX validation network.
 
 ## Recommended profile (dual-plane + L2 access)
 
-- mgmt plane: mgmtnet=172.30.0.0/24 (r1=.1, r2=.2, l2a=.11, l2b=.12)
+- mgmt plane: mgmtnet=192.168.0.0/24 (r1=.1, r2=.2, l2a=.11, l2b=.12)
 - service plane: labnet=10.0.0.0/24 (r1=.1, r2=.2)
 - data plane: vlan10=10.0.10.0/24 (R1 SVI .1, h10 .100) / vlan20=10.0.20.0/24 (R2 SVI .1, h20 .100)
 

@@ -63,9 +63,9 @@ macOS（OrbStack で検証）/ Docker で動作します。
   ## トポロジ（ASCII）
 
   ```text
-  Management plane (mgmtnet: 172.30.0.0/24)
+  Management plane (mgmtnet: 192.168.0.0/24)
 
-      172.30.0.1             172.30.0.2           172.30.0.11         172.30.0.12
+      192.168.0.1             192.168.0.2           192.168.0.11         192.168.0.12
     +------------+           +------------+         +------------+       +------------+
     |    R1      |           |     R2     |         |    L2A     |       |    L2B     |
     | SNMP Agent |           | SNMP Agent |         |  snmpd     |       |  snmpd     |

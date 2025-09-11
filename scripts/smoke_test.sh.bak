@@ -29,7 +29,7 @@ shorth "h20 -> h10 (10.0.10.100)"
 docker exec -it h20 ping -c3 10.0.10.100 || true
 
 hr; echo "[ SNMP over mgmtnet ] l2a/l2b sysDescr"
-docker exec -it r1 snmpwalk -v2c -c "${COMMUNITY}" 172.30.0.11:161 1.3.6.1.2.1.1.1.0 || true
-docker exec -it r1 snmpwalk -v2c -c "${COMMUNITY}" 172.30.0.12:161 1.3.6.1.2.1.1.1.0 || true
+docker exec -it r1 snmpwalk -v2c -c "${COMMUNITY}" 192.168.0.11:161 1.3.6.1.2.1.1.1.0 || true
+docker exec -it r1 snmpwalk -v2c -c "${COMMUNITY}" 192.168.0.12:161 1.3.6.1.2.1.1.1.0 || true
 
 hr; echo "Done."
