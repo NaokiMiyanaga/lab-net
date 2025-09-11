@@ -135,6 +135,11 @@ networks:
   mgmtnet:
     name: mgmtnet
     external: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0/24
+          gateway: 172.30.254
   labnet:
     name: labnet
   vlan10:

@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
+# --- ensure external shared network (mgmtnet) exists ---
+ensure_mgmtnet() {
+  if docker network inspect mgmtnet >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "[mgmtnet] create external shared network (172.30.0.0/24 via 172.30.0.254)"
+  docker network create \
+    --driver bridge \
+    --subnet 172.30.0.0/24 \
+    --gateway 172.30.0.254 \
+    mgmtnet
+}
+
 set -euo pipefail
 
 COMPOSE_FILE="docker-compose.yml"
