@@ -1,158 +1,104 @@
-name: lab-net
+# lab-net minimal & safe: disable docker logs + tmpfs logs everywhere
 
-# docker-compose.yml 置き換え案（lab-net最適化）
-x-tmpfs: &ephemeral_logs
+x-ephemeral: &ephemeral
   tmpfs:
     - /var/log
     - /tmp
     - /var/tmp
-
-# 必要になった時だけ使えるローテ設定（デフォルトは未使用）
-x-logging-rotated: &logging_rotated
   logging:
-    driver: json-file
-    options:
-      max-size: "10m"
-      max-file: "3"
+    driver: "none"
 
 services:
   r1:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: { context: ., dockerfile: Dockerfile }
     container_name: r1
     hostname: r1
     init: true
     restart: unless-stopped
     stop_grace_period: 2s
-    cap_add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
+    cap_add: ["NET_ADMIN","NET_RAW","SYS_ADMIN"]
     security_opt: ["no-new-privileges:false"]
-    ports:
-      - "10161:161/udp"
+    ports: ["10161:161/udp"]
     environment:
       - MY_ASN=65001
       - PEER_ASN=65002
       - SNMP_ROCOMMUNITY=public
     command: ["/init/r1-init.sh"]
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    <<: *ephemeral_logs
+    <<: *ephemeral
     networks: [mgmtnet]
+
   r2:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: { context: ., dockerfile: Dockerfile }
     container_name: r2
     hostname: r2
     init: true
     restart: unless-stopped
     stop_grace_period: 2s
-    cap_add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
+    cap_add: ["NET_ADMIN","NET_RAW","SYS_ADMIN"]
     security_opt: ["no-new-privileges:false"]
-    ports:
-      - "20161:161/udp"
+    ports: ["20161:161/udp"]
     environment:
       - MY_ASN=65002
       - PEER_ASN=65001
       - SNMP_ROCOMMUNITY=public
     command: ["/init/r2-init.sh"]
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    <<: *ephemeral_logs
+    <<: *ephemeral
     networks: [mgmtnet]
 
   l2a:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: { context: ., dockerfile: Dockerfile }
     container_name: l2a
     init: true
     restart: unless-stopped
     stop_grace_period: 2s
     cap_add: ["NET_ADMIN"]
     command: ["bash","-lc","/init/l2-init.sh || true; sleep infinity"]
-    logging:
-      driver: "none"
-    <<: *ephemeral_logs
+    <<: *ephemeral
     networks: [mgmtnet, vlan10, vlan20]
 
   l2b:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: { context: ., dockerfile: Dockerfile }
     container_name: l2b
     init: true
     restart: unless-stopped
     stop_grace_period: 2s
     cap_add: ["NET_ADMIN"]
     command: ["bash","-lc","/init/l2-init.sh || true; sleep infinity"]
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    <<: *ephemeral_logs
+    <<: *ephemeral
     networks: [mgmtnet, vlan10, vlan20]
 
   h10:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: { context: ., dockerfile: Dockerfile }
     container_name: h10
     init: true
     restart: unless-stopped
     stop_grace_period: 2s
     command: ["bash","-lc","/init/h10-init.sh || true; sleep infinity"]
-    logging:
-      driver: "none"
-    <<: *ephemeral_logs
+    <<: *ephemeral
     networks: [vlan10]
 
   h20:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: { context: ., dockerfile: Dockerfile }
     container_name: h20
     init: true
     restart: unless-stopped
     stop_grace_period: 2s
     command: ["bash","-lc","/init/h20-init.sh || true; sleep infinity"]
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    <<: *ephemeral_logs
+    <<: *ephemeral
     networks: [vlan20]
 
 networks:
   mgmtnet:
     name: mgmtnet
-    external: true
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.30.0/24
-          gateway: 172.30.254
-  labnet:
-    name: labnet
+    external: true
   vlan10:
     name: vlan10
     driver: bridge
     ipam:
-      config:
-        - subnet: 10.0.10.0/24
-          gateway: 10.0.10.254
+      config: [{ subnet: 10.0.10.0/24, gateway: 10.0.10.254 }]
   vlan20:
     name: vlan20
     driver: bridge
     ipam:
-      config:
-        - subnet: 10.0.20.0/24
-          gateway: 10.0.20.254
+      config: [{ subnet: 10.0.20.0/24, gateway: 10.0.20.254 }]
