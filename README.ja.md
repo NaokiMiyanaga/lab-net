@@ -27,10 +27,10 @@ macOS（OrbStack で検証）/ Docker で動作します。
 
   ```bash
   # ワンコマンド起動/停止/検証
-  bash scripts/lab.sh up        # 起動（dual-plane + L2 access）
-  bash scripts/lab.sh smoke     # IF/BGP/データプレーン/SNMP 確認
-  bash scripts/lab.sh diag      # 競合診断
-  bash scripts/lab.sh down      # 停止
+  bash ctrl.sh up        # 起動（dual-plane + L2 access）
+  bash ctrl.sh smoke     # IF/BGP/データプレーン/SNMP 確認
+  bash ctrl.sh diag      # 競合診断
+  bash ctrl.sh down      # 停止
   ```
 
   補足: dual-plane 構成ではホストへの SNMP 公開は無効（`ports: []`）。管理面 `mgmtnet` 側から SNMP を実行してください。

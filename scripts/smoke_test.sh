@@ -1,35 +1,64 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-COMMUNITY="${SNMP_ROCOMMUNITY:-public}"
+# ---- timeout/gtimeout の検出（必ず配列として宣言）----
+declare -a TIMEOUT=()
+if command -v timeout >/dev/null 2>&1; then
+  TIMEOUT=(timeout -k 2 20)
+elif command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT=(gtimeout -k 2 20)
+else
+  echo "[!] timeout not found; long runs may block"
+fi
 
-hr(){ printf "\n%s\n" "============================================================"; }
-shorth(){ printf "\n--- %s ---\n" "$*"; }
+# ---- 対象ノード（環境変数 NODES / 引数で上書き可）----
+# 例) NODES='r1 r2' ./ctrl.sh smoke  または  ./ctrl.sh smoke r1 r2
+declare -a NODES_ARR=()
+if [[ "${NODES-}" != "" ]]; then
+  # shellcheck disable=SC2206
+  NODES_ARR=(${NODES})
+elif (( $# > 0 )); then
+  # shellcheck disable=SC2206
+  NODES_ARR=($@)
+else
+  NODES_ARR=(r1 r2 l2a l2b h10 h20)
+fi
 
-NODES=(r1 r2)
-for C in "${NODES[@]}"; do
-  hr; echo "[ ${C} ] basic info"
-  docker exec -u root -it "$C" bash -lc 'ip -br addr show || true'
-  shorth "vtysh: show ip bgp summary"
-  docker exec -u root -it "$C" vtysh -c 'show ip bgp summary' || true
-  shorth "vtysh: show ip route bgp"
-  docker exec -u root -it "$C" vtysh -c 'show ip route bgp' || true
+# ---- ユーティリティ ----
+line() { printf '%s\n' "============================================================"; }
+is_running() {
+  local n="$1"
+  docker inspect -f '{{.State.Running}}' "$n" 2>/dev/null | grep -q true
+}
+
+dex() {
+  # docker exec ラッパ：起動確認 & timeout があれば使用
+  local n="$1"; shift
+  if ! is_running "$n"; then
+    echo "[$n] not running"
+    return 1
+  fi
+  if ((${#TIMEOUT[@]} > 0)); then
+    "${TIMEOUT[@]}" docker exec -i "$n" bash -lc "$*" 2>&1
+  else
+    docker exec -i "$n" bash -lc "$*" 2>&1
+  fi
+}
+
+smoke_node() {
+  local n="$1"
+  echo
+  line
+  echo "[ $n ] basic info"
+
+  # NIC 概要（失敗しても落とさない）
+  dex "$n" "ip -br a || true"
+
+  # FRR が居るなら経路表示
+  dex "$n" "command -v vtysh >/dev/null 2>&1 && vtysh -c 'show ip route' || true"
+}
+
+# ---- 実行 ----
+for n in "${NODES_ARR[@]}"; do
+  smoke_node "$n" || true
 done
-
-hr; echo "[ Data-plane ping ] hosts ↔ SVIs"
-shorth "h10 -> R1 SVI (10.0.10.1)"
-docker exec -it h10 ping -c3 10.0.10.1 || true
-shorth "h20 -> R2 SVI (10.0.20.1)"
-docker exec -it h20 ping -c3 10.0.20.1 || true
-
-hr; echo "[ Cross-VLAN ping ] via R1<->R2 eBGP"
-shorth "h10 -> h20 (10.0.20.100)"
-docker exec -it h10 ping -c3 10.0.20.100 || true
-shorth "h20 -> h10 (10.0.10.100)"
-docker exec -it h20 ping -c3 10.0.10.100 || true
-
-hr; echo "[ SNMP over mgmtnet ] l2a/l2b sysDescr"
-docker exec -it r1 snmpwalk -v2c -c "${COMMUNITY}" 172.30.0.11:161 1.3.6.1.2.1.1.1.0 || true
-docker exec -it r1 snmpwalk -v2c -c "${COMMUNITY}" 172.30.0.12:161 1.3.6.1.2.1.1.1.0 || true
-
-hr; echo "Done."

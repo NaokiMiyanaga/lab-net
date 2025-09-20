@@ -14,6 +14,7 @@ services:
     container_name: r1
     hostname: r1
     init: true
+    image: lab-net-r1
     restart: unless-stopped
     stop_grace_period: 2s
     cap_add: ["NET_ADMIN","NET_RAW","SYS_ADMIN"]
@@ -25,6 +26,11 @@ services:
       - SNMP_ROCOMMUNITY=public
     command: ["/init/r1-init.sh"]
     <<: *ephemeral
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks: [mgmtnet]
 
   r2:
@@ -32,6 +38,7 @@ services:
     container_name: r2
     hostname: r2
     init: true
+    image: lab-net-r2
     restart: unless-stopped
     stop_grace_period: 2s
     cap_add: ["NET_ADMIN","NET_RAW","SYS_ADMIN"]
@@ -43,6 +50,11 @@ services:
       - SNMP_ROCOMMUNITY=public
     command: ["/init/r2-init.sh"]
     <<: *ephemeral
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks: [mgmtnet]
 
   l2a:
