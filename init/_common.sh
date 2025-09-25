@@ -2,6 +2,11 @@
 set -euo pipefail
 exec > >(tee -a /init/start.log) 2>&1
 
+prepare_ansible_tmp() {
+  mkdir -p /tmp/.ansible-tmp
+  chmod 1777 /tmp/.ansible-tmp
+}
+
   # Pick FRR modules directory by arch/distro
   detect_modules_dir() {
     if [ -d /usr/lib/aarch64-linux-gnu/frr/modules ]; then

@@ -2,6 +2,8 @@
 set -euo pipefail
 source /init/_common.sh
 
+prepare_ansible_tmp
+
 start_snmpd
 start_frr_daemons
 wait_for_vty
