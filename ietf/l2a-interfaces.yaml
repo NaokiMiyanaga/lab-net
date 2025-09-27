@@ -1,0 +1,20 @@
+# Device-level config intent for L2 switch l2a
+# Modules: ietf-interfaces, iana-if-type, ietf-ip
+
+ietf-interfaces:interfaces:
+  interface:
+    - name: mgmt0
+      type: iana-if-type:ethernetCsmacd
+      enabled: true
+      ietf-ip:ipv4:
+        address:
+          - ip: 203.0.113.101
+            prefix-length: 24
+    - name: vlan10
+      type: iana-if-type:l2vlan
+      enabled: true
+      description: VLAN10 access segment
+    - name: vlan20
+      type: iana-if-type:l2vlan
+      enabled: true
+      description: VLAN20 access segment

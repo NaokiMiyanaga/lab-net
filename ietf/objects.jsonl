@@ -8,3 +8,11 @@
 {"type": "node", "network-id": "management-plane", "node-id": "r2", "node": {"node-id": "r2", "ietf-network-topology:termination-point": [{"tp-id": "r2-mgmt"}]}, "text": "Node r2", "observed_at": "2025-09-05T19:38:47+00:00", "source": "cmdb", "lang": "ja"}
 {"type": "tp", "network-id": "management-plane", "node-id": "r2", "tp-id": "r2-mgmt", "tp": {"tp-id": "r2-mgmt"}, "text": "TP r2:r2-mgmt", "source": "cmdb", "lang": "ja"}
 {"type": "link", "network-id": "management-plane", "link-id": "mgmt-r1-r2", "link": {"link-id": "mgmt-r1-r2", "ietf-network-topology:source": {"source-node": "r1", "source-tp": "r1-mgmt"}, "ietf-network-topology:destination": {"dest-node": "r2", "dest-tp": "r2-mgmt"}}, "text": "Link mgmt-r1-r2", "source": "cmdb", "lang": "ja"}
+{"type": "node", "network-id": "management-plane", "node-id": "l2a", "node": {"node-id": "l2a", "ietf-network-topology:termination-point": [{"tp-id": "l2a-mgmt"}]}, "text": "Node l2a", "source": "cmdb", "lang": "ja"}
+{"type": "tp", "network-id": "management-plane", "node-id": "l2a", "tp-id": "l2a-mgmt", "tp": {"tp-id": "l2a-mgmt"}, "text": "TP l2a:l2a-mgmt", "source": "cmdb", "lang": "ja"}
+{"type": "node", "network-id": "management-plane", "node-id": "l2b", "node": {"node-id": "l2b", "ietf-network-topology:termination-point": [{"tp-id": "l2b-mgmt"}]}, "text": "Node l2b", "source": "cmdb", "lang": "ja"}
+{"type": "tp", "network-id": "management-plane", "node-id": "l2b", "tp-id": "l2b-mgmt", "tp": {"tp-id": "l2b-mgmt"}, "text": "TP l2b:l2b-mgmt", "source": "cmdb", "lang": "ja"}
+{"type": "node", "network-id": "management-plane", "node-id": "h10", "node": {"node-id": "h10", "ietf-network-topology:termination-point": [{"tp-id": "h10-mgmt"}]}, "text": "Node h10", "source": "cmdb", "lang": "ja"}
+{"type": "tp", "network-id": "management-plane", "node-id": "h10", "tp-id": "h10-mgmt", "tp": {"tp-id": "h10-mgmt"}, "text": "TP h10:h10-mgmt", "source": "cmdb", "lang": "ja"}
+{"type": "node", "network-id": "management-plane", "node-id": "h20", "node": {"node-id": "h20", "ietf-network-topology:termination-point": [{"tp-id": "h20-mgmt"}]}, "text": "Node h20", "source": "cmdb", "lang": "ja"}
+{"type": "tp", "network-id": "management-plane", "node-id": "h20", "tp-id": "h20-mgmt", "tp": {"tp-id": "h20-mgmt"}, "text": "TP h20:h20-mgmt", "source": "cmdb", "lang": "ja"}

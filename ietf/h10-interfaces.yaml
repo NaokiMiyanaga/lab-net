@@ -1,0 +1,12 @@
+# Host interface definition for h10
+# Modules: ietf-interfaces, iana-if-type, ietf-ip
+
+ietf-interfaces:interfaces:
+  interface:
+    - name: eth0
+      type: iana-if-type:ethernetCsmacd
+      enabled: true
+      ietf-ip:ipv4:
+        address:
+          - ip: 10.0.10.10
+            prefix-length: 24
